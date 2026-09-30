@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Nhập - Hệ Thống Đánh Giá Tín Dụng</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            /* Đặt hình nền phủ kín toàn màn hình */
+            background-image: url("{{ url_for('static', filename='bg.jpg') }}");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .auth-card {
+            background: rgba(255, 255, 255, 0.95); /* Màu nền trắng nhẹ hơi trong suốt */
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 400px;
+            backdrop-filter: blur(5px); /* Hiệu ứng làm mờ nhẹ phía sau khung */
+        }
+        h2 {
+            text-align: center;
+            color: #0f172a;
+            font-size: 26px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .sub-title {
+            text-align: center;
+            color: #475569;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+        .form-group {
+            margin-bottom: 18px;
+        }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 700;
+            font-size: 14px;
+            color: #334155;
+        }
+        input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 15px;
+            outline: none;
+            transition: all 0.2s;
+        }
+        input:focus {
+            border-color: #059669;
+            box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.2);
+        }
+        button {
+            width: 100%;
+            padding: 13px;
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #1d4ed8;
+        }
+        .alert {
+            padding: 10px 14px;
+            margin-bottom: 18px;
+            border-radius: 8px;
+            font-size: 14px;
+            text-align: center;
+            font-weight: 600;
+        }
+        .alert-danger { background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+        .alert-success { background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+        .alert-info { background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+        
+        .link {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #475569;
+        }
+        .link a {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<div class="auth-card">
+    <h2>ĐĂNG NHẬP</h2>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% else %}
+        <p class="sub-title">Vui lòng đăng nhập để sử dụng ứng dụng!</p>
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST">
+        <div class="form-group">
+            <label>Tên đăng nhập:</label>
+            <input type="text" name="username" required placeholder="Nhập tên đăng nhập">
+        </div>
+        <div class="form-group">
+            <label>Mật khẩu:</label>
+            <input type="password" name="password" required placeholder="Nhập mật khẩu">
+        </div>
+        <button type="submit">Đăng Nhập</button>
+    </form>
+
+    <div class="link">
+        Chưa có tài khoản? <a href="/register">Đăng ký ngay</a>
+    </div>
+</div>
+
+</body>
+</html>

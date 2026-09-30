@@ -1,0 +1,231 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VAY TIỀN ONLINE - Đánh Giá Tín Dụng</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .main-wrapper {
+            background: white;
+            width: 100%;
+            max-width: 1000px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            display: flex;
+            overflow: hidden;
+            flex-wrap: wrap;
+        }
+        /* Cột bên trái: Hình ảnh minh họa */
+        .left-banner {
+            flex: 1;
+            min-width: 320px;
+            background-color: #eefbf4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+        }
+        .left-banner img {
+            width: 100%;
+            max-width: 400px;
+            height: auto;
+            object-fit: contain;
+        }
+        /* Cột bên phải: Tiêu đề & Form */
+        .right-content {
+            flex: 1;
+            min-width: 320px;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .hero-title {
+            font-size: 38px;
+            font-weight: 900;
+            color: #111827;
+            line-height: 1.1;
+            letter-spacing: 1px;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+        }
+        .hero-title span {
+            color: #059669;
+            display: block;
+        }
+        /* Form nhập liệu */
+        .form-group {
+            margin-bottom: 16px;
+        }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            color: #374151;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input:focus, select:focus {
+            border-color: #059669;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background-color: #059669;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #047857;
+        }
+        /* Thông báo kết quả */
+        .result {
+            margin-top: 20px;
+            padding: 14px;
+            text-align: center;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 15px;
+        }
+        .approved {
+            background-color: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        .rejected {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-wrapper">
+    <!-- Cột trái: Ảnh minh họa giống mẫu -->
+    <div class="left-banner">
+        <img src="{{ url_for('static', filename='banner.jpg') }}" alt="Vay Tiền Online Banner">
+    </div>
+
+    <!-- Cột phải: Tiêu đề lớn và Form dự đoán -->
+   <!-- Cột phải: Tiêu đề lớn và Form dự đoán -->
+<div class="right-content">
+    <!-- Thanh chào người dùng và Đăng xuất (Nằm ngoài h1) -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: #e0f2fe; padding: 10px 15px; border-radius: 8px;">
+        <span style="color: #0369a1; font-weight: bold;">Xin chào, {{ user.username }}!</span>
+        <a href="/logout" style="color: #dc2626; text-decoration: none; font-weight: bold; font-size: 14px;">[Đăng xuất]</a>
+    </div>
+
+    <!-- Tiêu đề lớn -->
+    <h1 class="hero-title">
+        VAY TIỀN<br>
+        <span>ONLINE</span>
+    </h1>
+
+        <form action="/predict" method="post">
+            <div class="form-group">
+                <label>Thu nhập hàng tháng (Triệu VNĐ):</label>
+                <input type="number" name="income" required placeholder="Ví dụ: 15">
+            </div>
+
+            <div class="form-group">
+                <label>Lịch sử tín dụng:</label>
+                <select name="credit_history">
+                    <option value="1">Tốt (Không nợ xấu)</option>
+                    <option value="0">Xấu (Có nợ xấu)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Số tiền muốn vay (Triệu VNĐ):</label>
+                <input type="number" name="loan_amount" required placeholder="Ví dụ: 100">
+            </div>
+
+            <div class="form-group">
+                <label>Tuổi người vay:</label>
+                <input type="number" name="age" required placeholder="Ví dụ: 25">
+            </div>
+
+            <button type="submit">ĐÁNH GIÁ HỒ SƠ</button>
+        </form>
+
+        {% if result %}
+            <div class="result {{ 'approved' if status == 1 else 'rejected' }}">
+                <div style="font-size: 16px; margin-bottom: 5px;">{{ result }}</div>
+
+                <!-- Nếu bị từ chối, hiển thị chi tiết các lý do -->
+                {% if status == 0 and reasons %}
+                    <div style="text-align: left; margin-top: 10px; font-weight: normal; font-size: 13px; border-top: 1px dashed #fca5a5; padding-top: 10px;">
+                        <strong style="color: #991b1b; display: block; margin-bottom: 5px;">Lý do chưa đạt yêu cầu:</strong>
+                        <ul style="padding-left: 20px; color: #7f1d1d; margin-bottom: 10px;">
+                            {% for reason in reasons %}
+                                <li>{{ reason }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        <!-- Nút xem Điều khoản & Điều kiện vay -->
+        <div style="margin-top: 20px; text-align: center;">
+            <button type="button" onclick="toggleTerms()" style="background: none; border: none; color: #2563eb; font-size: 13px; cursor: pointer; text-decoration: underline; padding: 0;">
+                📋 Xem Điều Kiện & Quy Định Duyệt Khoản Vay
+            </button>
+        </div>
+
+        <!-- Khung ẩn Điều khoản dịch vụ -->
+        <div id="termsModal" style="display: none; margin-top: 15px; padding: 15px; background: #f1f5f9; border-radius: 8px; font-size: 13px; color: #334155; text-align: left; border: 1px solid #cbd5e1;">
+            <h4 style="margin-bottom: 8px; color: #0f172a; text-align: center;">TIÊU CHUẨN DUYỆT KHOẢN VAY</h4>
+            <ul style="padding-left: 20px; line-height: 1.6;">
+                <li><strong>Độ tuổi quy định:</strong> Khách hàng từ 18 đến 60 tuổi.</li>
+                <li><strong>Thu nhập tối thiểu:</strong> Từ 10.000.000 VNĐ/tháng trở lên.</li>
+                <li><strong>Lịch sử tín dụng:</strong> Không có nợ xấu (Lịch sử tín dụng Tốt).</li>
+                <li><strong>Hạn mức vay tối đa:</strong> Không vượt quá 20 lần tổng thu nhập hàng tháng.</li>
+            </ul>
+        </div>
+
+        <script>
+            function toggleTerms() {
+                var modal = document.getElementById("termsModal");
+                if (modal.style.display === "none") {
+                    modal.style.display = "block";
+                } else {
+                    modal.style.display = "none";
+                }
+            }
+        </script>
+    </div>
+</div>
+
+</body>
+</html>

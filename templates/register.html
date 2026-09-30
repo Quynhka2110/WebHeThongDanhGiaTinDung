@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Đăng Ký Tài Khoản</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            background-image: url("{{ url_for('static', filename='bg.jpg') }}");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+        }
+        .auth-card { 
+            background: rgba(255, 255, 255, 0.85); 
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 30px; 
+            border-radius: 12px; 
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); 
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            width: 100%; 
+            max-width: 360px; 
+        }
+        h2 { text-align: center; color: #111827; margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
+        input { 
+            width: 100%; 
+            padding: 10px; 
+            border: 1px solid #ccc; 
+            border-radius: 6px; 
+            box-sizing: border-box; 
+            background: rgba(255, 255, 255, 0.9);
+        }
+        button { 
+            width: 100%; 
+            padding: 12px; 
+            background: #059669; 
+            color: white; 
+            border: none; 
+            border-radius: 6px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: background 0.2s ease;
+        }
+        button:hover { background: #047857; }
+        .alert { padding: 10px; margin-bottom: 15px; border-radius: 6px; font-size: 14px; text-align: center; }
+        .alert-danger { background: #fee2e2; color: #991b1b; }
+        .link { text-align: center; margin-top: 15px; font-size: 14px; }
+        .link a { color: #059669; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="auth-card">
+    <h2>ĐĂNG KÝ</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST">
+        <div class="form-group">
+            <label>Tên đăng nhập:</label>
+            <input type="text" name="username" required>
+        </div>
+        <div class="form-group">
+            <label>Mật khẩu:</label>
+            <input type="password" name="password" required>
+        </div>
+        <button type="submit">Đăng Ký</button>
+    </form>
+
+    <div class="link">
+        Đã có tài khoản? <a href="{{ url_for('login') }}">Đăng nhập ngay</a>
+    </div>
+</div>
+
+</body>
+</html>

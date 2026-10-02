@@ -1,130 +1,709 @@
+import random
 from flask import Flask, render_template, request, redirect, url_for, flash
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from flask_login import (
+    LoginManager,
+    UserMixin,
+    login_user,
+    login_required,
+    logout_user,
+    current_user
+)
+from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
+
+# ============================================================
+# 1. KHỞI TẠO FLASK
+# ============================================================
+
 app = Flask(__name__)
+
 app.config['SECRET_KEY'] = 'bi-mat-do-an-tin-dung'
 
-# Cấu hình hệ thống Đăng nhập
+# ============================================================
+# 2. CẤU HÌNH DATABASE SQLITE (ĐÃ FIX TỐI ƯU CHỐNG LOCK & CONTEXT ERROR)
+# ============================================================
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///credit_system.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Tăng timeout chờ lock và bật trực tiếp chế độ WAL/Foreign Keys từ connect_args
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'connect_args': {
+        'timeout': 30,
+        'check_same_thread': False
+    }
+}
+db = SQLAlchemy(app)
+# Tự động đóng kết nối giải phóng lock sau mỗi request
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    db.session.remove()
+
+# ============================================================
+# 3. CẤU HÌNH FLASK-LOGIN
+# ============================================================
 login_manager = LoginManager()
 login_manager.init_app(app)
+
 login_manager.login_view = 'login'
-login_manager.login_message = "Vui lòng đăng nhập để sử dụng ứng dụng!"
+login_manager.login_message = "Vui lòng đăng nhập để truy cập hệ thống!"
+login_manager.login_message_category = "warning"
 
-# Bộ nhớ lưu tài khoản tạm thời
-users = {}
+# ============================================================
+# 4. DATABASE MODEL - USER
+# ============================================================
+class User(UserMixin, db.Model):
 
-class User(UserMixin):
-    def __init__(self, id, username):
-        self.id = id
-        self.username = username
+    __tablename__ = 'users'
 
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+    username = db.Column(
+        db.String(50),
+        unique=True,
+        nullable=False
+        )
+    password = db.Column(
+        db.String(200),
+        nullable=False
+        )
+    role = db.Column(
+        db.String(20),
+        nullable=False,
+        default='user'
+        )
+
+# ============================================================
+# 5. DATABASE MODEL - APPLICATION
+# ============================================================
+class Application(db.Model):
+    __tablename__ = 'applications'
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+    app_id = db.Column(
+        db.String(20),
+        unique=True,
+        nullable=False
+    )
+    username = db.Column(
+        db.String(50),
+        nullable=False
+    )
+    score = db.Column(
+        db.Integer,
+        nullable=False
+    )
+    # Lưu số tiền dưới dạng số để sau này dễ thống kê
+    amount = db.Column(
+        db.Float,
+        nullable=False
+    )
+    status = db.Column(
+        db.String(50),
+        nullable=False
+    )
+    badge = db.Column(
+        db.String(20),
+        nullable=False
+    )
+
+# ============================================================
+# 6. LOAD USER ĐĂNG NHẬP
+# ============================================================
 @login_manager.user_loader
 def load_user(user_id):
-    if user_id in users:
-        return User(user_id, users[user_id]['username'])
-    return None
+    try:
+        return db.session.get(User, int(user_id))
+    except (ValueError, TypeError):
+        return None
 
-# 1. TRANG CHỦ DỰ ĐOÁN (Chỉ vào được khi đã đăng nhập)
-@app.route('/', methods=['GET', 'POST'])
+# ============================================================
+# 7. KHỞI TẠO DATABASE
+# ============================================================
+def init_db():
+    with app.app_context():
+
+        # Tạo bảng nếu chưa tồn tại
+        db.create_all()
+
+        # ----------------------------------------------------
+        # Tạo tài khoản ADMIN mặc định
+        # ----------------------------------------------------
+
+        admin_user = User.query.filter_by(
+            username='admin'
+        ).first()
+
+        if not admin_user:
+
+            admin_user = User(
+                username='admin',
+                password=generate_password_hash(
+                    'Admin2005@',
+                    method='scrypt'
+                ),
+                role='admin'
+            )
+
+            db.session.add(admin_user)
+
+        # ----------------------------------------------------
+        # Tạo tài khoản USER mặc định
+        # ----------------------------------------------------
+
+        normal_user = User.query.filter_by(
+            username='user'
+        ).first()
+
+        if not normal_user:
+
+            normal_user = User(
+                username='user',
+                password=generate_password_hash(
+                    '123456',
+                    method='scrypt'
+                ),
+                role='user'
+            )
+
+            db.session.add(normal_user)
+
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+
+# ============================================================
+# 8. TRANG CHỦ
+# ============================================================
+
+@app.route('/')
 @login_required
 def home():
+
+    if current_user.role == 'admin':
+
+        return redirect(
+            url_for('admin_dashboard')
+        )
+
+    return redirect(
+        url_for('user_home')
+    )
+
+
+# ============================================================
+# 9. TRANG NGƯỜI DÙNG
+# ============================================================
+
+@app.route('/user', methods=['GET', 'POST'])
+@login_required
+def user_home():
+
     result = None
     status = None
-    reasons = [] # Lưu danh sách các lý do bị từ chối
+    reasons = []
 
     if request.method == 'POST':
-        income = float(request.form.get('income', 0))
-        credit_history = int(request.form.get('credit_history', 0))
-        loan_amount = float(request.form.get('loan_amount', 0))
-        age = int(request.form.get('age', 0))
 
-        # Kiểm tra từng điều kiện tiêu chuẩn
+        # ====================================================
+        # KIỂM TRA DỮ LIỆU FORM
+        # ====================================================
+
+        try:
+
+            income_text = request.form.get(
+                'income',
+                ''
+            ).strip()
+
+            credit_history_text = request.form.get(
+                'credit_history',
+                ''
+            ).strip()
+
+            loan_amount_text = request.form.get(
+                'loan_amount',
+                ''
+            ).strip()
+
+            age_text = request.form.get(
+                'age',
+                ''
+            ).strip()
+
+            # Không cho phép bỏ trống
+            if not income_text:
+                raise ValueError("Thu nhập không được để trống.")
+
+            if not credit_history_text:
+                raise ValueError(
+                    "Vui lòng chọn lịch sử tín dụng."
+                )
+
+            if not loan_amount_text:
+                raise ValueError(
+                    "Số tiền vay không được để trống."
+                )
+
+            if not age_text:
+                raise ValueError(
+                    "Tuổi không được để trống."
+                )
+
+            # Chuyển kiểu dữ liệu
+            income = float(income_text)
+
+            credit_history = int(
+                credit_history_text
+            )
+
+            loan_amount = float(
+                loan_amount_text
+            )
+
+            age = int(age_text)
+
+        except ValueError as e:
+
+            flash(
+                f"Dữ liệu không hợp lệ: {e}",
+                'danger'
+            )
+
+            return redirect(
+                url_for('user_home')
+            )
+
+        # ====================================================
+        # KIỂM TRA DỮ LIỆU ÂM / KHÔNG HỢP LỆ
+        # ====================================================
+
+        if income <= 0:
+
+            flash(
+                'Thu nhập phải lớn hơn 0.',
+                'danger'
+            )
+
+            return redirect(
+                url_for('user_home')
+            )
+
+        if loan_amount <= 0:
+
+            flash(
+                'Số tiền vay phải lớn hơn 0.',
+                'danger'
+            )
+
+            return redirect(
+                url_for('user_home')
+            )
+
+        if age <= 0:
+
+            flash(
+                'Tuổi phải lớn hơn 0.',
+                'danger'
+            )
+
+            return redirect(
+                url_for('user_home')
+            )
+
+        # ====================================================
+        # KIỂM TRA LỊCH SỬ TÍN DỤNG
+        # ====================================================
+
+        if credit_history not in [0, 1]:
+
+            flash(
+                'Lịch sử tín dụng không hợp lệ.',
+                'danger'
+            )
+
+            return redirect(
+                url_for('user_home')
+            )
+
+       # ====================================================
+        # KIỂM TRA ĐIỀU KIỆN VAY (CẬP NHẬT QUY ĐỊNH MỚI)
+        # ====================================================
+        # 1. Kiểm tra lịch sử tín dụng
         if credit_history == 0:
-            reasons.append("Lịch sử tín dụng có nợ xấu (Cần lịch sử tín dụng Tốt).")
-        
-        if income < 10:
-            reasons.append(f"Thu nhập hàng tháng quá thấp ({income} triệu - Yêu cầu tối thiểu từ 10 triệu/tháng).")
-            
-        if loan_amount > (income * 20):
-            reasons.append(f"Số tiền muốn vay ({loan_amount} triệu) vượt quá hạn mức cho phép (Tối đa {income * 20} triệu - tương đương 20 lần thu nhập).")
-            
+            reasons.append(
+                "Lịch sử tín dụng có nợ xấu (Yêu cầu lịch sử tín dụng tốt)."
+            )
+        # 2. Kiểm tra thu nhập (Tối thiểu 5 triệu VNĐ)
+        if income < 5:
+            reasons.append(
+                f"Thu nhập hàng tháng quá thấp ({income:,.1f} triệu VNĐ - Yêu cầu tối thiểu từ 5 triệu VNĐ)."
+            )
+        # 3. Kiểm tra số tiền vay (Tối thiểu 10 triệu, Tối đa 1,000 triệu = 1 tỷ)
+        if loan_amount < 10:
+            reasons.append(
+                f"Số tiền muốn vay quá nhỏ ({loan_amount:,.0f} triệu VNĐ - Yêu cầu vay tối thiểu từ 10 triệu VNĐ)."
+            )
+        elif loan_amount > 1000:
+            reasons.append(
+                f"Số tiền muốn vay quá lớn ({loan_amount:,.0f} triệu VNĐ - Yêu cầu vay tối đa 1,000 triệu VNĐ / 1 tỷ VNĐ)."
+            )
+        # 4. Kiểm tra tỷ lệ vay so với thu nhập (Tối đa 20 lần thu nhập)
+        max_loan_by_income = income * 20
+        if loan_amount > max_loan_by_income and loan_amount <= 1000:
+            reasons.append(
+                f"Số tiền vay ({loan_amount:,.0f} triệu VNĐ) vượt quá hạn mức theo thu nhập "
+                f"(Tối đa {max_loan_by_income:,.0f} triệu VNĐ tương ứng 20 lần thu nhập)."
+            )
+        # 5. Kiểm tra độ tuổi
         if age < 18 or age > 60:
-            reasons.append(f"Độ tuổi ({age} tuổi) không nằm trong quy định cho vay (Từ 18 đến 60 tuổi).")
+            reasons.append(
+                f"Độ tuổi ({age} tuổi) ngoài quy định (Từ 18 đến 60 tuổi)."
+            )
 
-        # Đánh giá kết quả
+        # ====================================================
+        # ĐÁNH GIÁ HỒ SƠ
+        # ====================================================
+
         if len(reasons) == 0:
             status = 1
-            result = "Hồ sơ ĐỦ ĐIỀU KIỆN cho vay! (Approved)"
+            result = (
+                "Hồ sơ ĐỦ ĐIỀU KIỆN cho vay! "
+                "(Approved)"
+            )
+            ai_status = "Phê Duyệt"
+            badge_type = "approved"
+
         else:
             status = 0
-            result = "Hồ sơ KHÔNG ĐỦ ĐIỀU KIỆN cho vay! (Rejected)"
+            result = (
+                "Hồ sơ KHÔNG ĐỦ ĐIỀU KIỆN cho vay! "
+                "(Rejected)"
+            )
+            ai_status = "Từ Chối"
+            badge_type = "rejected"
 
-    return render_template('index.html', result=result, status=status, reasons=reasons, user=current_user)
+        # ====================================================
+        # TẠO ĐIỂM TÍN DỤNG DEMO
+        # ====================================================
+        if status == 1:
+            score = random.randint(
+                650,
+                850
+            )
+        else:
+            score = random.randint(
+                400,
+                649
+            )
+        # ====================================================
+        # TẠO HỒ SƠ MỚI (ĐÃ FIX LỖI DATABASE LOCKED)
+        # ====================================================
+        # 1. Sinh mã ngẫu nhiên và kiểm tra trùng TRƯỚC KHI add vào session
+        generated_app_id = f"HS-{random.randint(100000, 999999)}"
+        while Application.query.filter_by(app_id=generated_app_id).first():
+            generated_app_id = f"HS-{random.randint(100000, 999999)}"
 
-# 2. ROUTE DỰ ĐOÁN (Chuyển lên trước app.run)
-@app.route('/predict', methods=['POST'])
+        # 2. Khởi tạo đối tượng hồ sơ
+        new_app = Application(
+            app_id=generated_app_id,
+            username=current_user.username,
+            score=score,
+            amount=loan_amount,
+            status=ai_status,
+            badge=badge_type
+        )
+
+        # 3. Lưu vào Database với try-except an toàn
+        try:
+            db.session.add(new_app)
+            db.session.commit()
+            if status == 1:
+                flash(
+                    "Đã lưu hồ sơ vay thành công.",
+                    "success"
+                )
+            else:
+                flash(
+                    "Hồ sơ đã được lưu vào hệ thống.",
+                    "warning"
+                )
+        except Exception as e:
+            db.session.rollback()
+            flash(
+                f"Lỗi khi lưu dữ liệu vào hệ thống: {e}",
+                "danger"
+            )
+    # ========================================================
+    # HIỂN THỊ GIAO DIỆN
+    # ========================================================
+    return render_template(
+        'index.html',
+        result=result,
+        status=status,
+        reasons=reasons,
+        user=current_user
+    )
+
+# ============================================================
+# ============================================================
+# 10. ADMIN DASHBOARD & QUẢN LÝ NGƯỜI DÙNG
+# ============================================================
+
+@app.route('/admin')
 @login_required
-def predict():
-    income = float(request.form.get('income', 0))
-    credit_history = int(request.form.get('credit_history', 0))
-    loan_amount = float(request.form.get('loan_amount', 0))
+def admin_dashboard():
+    # Kiểm tra quyền Admin
+    if current_user.role != 'admin':
+        flash('Bạn không có quyền truy cập trang Admin!', 'danger')
+        return redirect(url_for('user_home'))
 
-    if credit_history == 1 and income >= 10 and loan_amount <= (income * 20):
-        status = 1
-        result = "Hồ sơ ĐỦ ĐIỀU KIỆN cho vay! (Approved)"
+    # Lấy danh sách hồ sơ vay
+    applications = Application.query.order_by(Application.id.desc()).all()
+    
+    # Lấy danh sách tất cả tài khoản người dùng
+    all_users = User.query.all()
+
+    # Thống kê
+    total_activities = Application.query.count()
+    total_users = User.query.count()
+    total_loans = sum(item.amount for item in applications)
+    approved_count = Application.query.filter_by(status='Phê Duyệt').count()
+    rejected_count = Application.query.filter_by(status='Từ Chối').count()
+
+    # Tính tỷ lệ phê duyệt
+    if total_activities > 0:
+        approval_rate = round((approved_count / total_activities) * 100, 1)
     else:
-        status = 0
-        result = "Hồ sơ KHÔNG ĐỦ ĐIỀU KIỆN cho vay! (Rejected)"
+        approval_rate = 0
 
-    return render_template('index.html', result=result, status=status, user=current_user)
+    return render_template(
+        'admin.html',
+        user=current_user,
+        apps=applications,
+        users_list=all_users,  # <-- Thêm biến này để gửi danh sách user sang admin.html
+        total_activities=total_activities,
+        total_users=total_users,
+        total_loans=total_loans,
+        approval_rate=approval_rate,
+        approved_count=approved_count,
+        rejected_count=rejected_count
+    )
 
-# 3. TRANG ĐĂNG KÝ
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
 
-        if username in users:
-            flash('Tên đăng nhập này đã tồn tại!', 'danger')
-            return redirect(url_for('register'))
+# API Xóa người dùng (Dành cho Admin)
+@app.route('/admin/users/delete/<int:user_id>', methods=['POST'])
+@login_required
+def delete_user(user_id):
+    if current_user.role != 'admin':
+        flash('Bạn không có quyền thực hiện thao tác này!', 'danger')
+        return redirect(url_for('user_home'))
 
-        users[username] = {
-            'username': username,
-            'password': generate_password_hash(password, method='scrypt')
-        }
+    user_to_delete = db.session.get(User, user_id)
+    if user_to_delete:
+        if user_to_delete.username == 'admin':
+            flash('Không thể xóa tài khoản Admin mặc định!', 'warning')
+        else:
+            db.session.delete(user_to_delete)
+            db.session.commit()
+            flash(f'Đã xóa tài khoản {user_to_delete.username} thành công.', 'success')
+    else:
+        flash('Tài khoản không tồn tại!', 'danger')
 
-        flash('Đăng ký tài khoản thành công! Vui lòng đăng nhập.', 'success')
-        return redirect(url_for('login'))
+    return redirect(url_for('admin_dashboard'))
 
-    return render_template('register.html')
-
-# 4. TRANG ĐĂNG NHẬP
+# ============================================================
+# 11. ĐĂNG NHẬP
+# ============================================================
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
+        username = request.form.get(
+            'username', ''
+        ).strip()
+        password = request.form.get(
+            'password',''
+        )
+        if not username or not password:
+            flash(
+                'Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu!',
+                'danger'
+            )
+            return redirect(
+                url_for('login')
+            )
+        user = User.query.filter_by(
+            username=username
+        ).first()
 
-        user_data = users.get(username)
-        if user_data and check_password_hash(user_data['password'], password):
-            user = User(id=username, username=username)
+        if user and check_password_hash(
+            user.password,
+            password
+        ):
             login_user(user)
-            return redirect(url_for('home'))
+            return redirect(
+                url_for('home')
+            )
         else:
-            flash('Tên đăng nhập hoặc mật khẩu không chính xác!', 'danger')
+            flash(
+                'Tên đăng nhập hoặc mật khẩu không chính xác!',
+                'danger'
+            )
+    return render_template(
+        'login.html'
+    )
 
-    return render_template('login.html')
+# ============================================================
+# 12. ĐĂNG KÝ
+# ============================================================
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form.get(
+            'username', ''
+        ).strip()
+        password = request.form.get(
+            'password', ''
+        )
+        if not username:
+            flash(
+                'Tên đăng nhập không được để trống!',
+                'danger'
+            )
+            return redirect(
+                url_for('register')
+            )
+        if not password:
+            flash(
+                'Mật khẩu không được để trống!',
+                'danger'
+            )
+            return redirect(
+                url_for('register')
+            )
+        if len(username) < 3:
+            flash(
+                'Tên đăng nhập phải có ít nhất 3 ký tự!',
+                'danger'
+            )
+            return redirect(
+                url_for('register')
+            )
+        if len(password) < 6:
+            flash(
+                'Mật khẩu phải có ít nhất 6 ký tự!',
+                'danger'
+            )
+            return redirect(
+                url_for('register')
+            )
+        existing_user = User.query.filter_by(
+            username=username
+        ).first()
+        if existing_user:
+            flash(
+                'Tên đăng nhập này đã tồn tại!',
+                'danger'
+            )
+            return redirect(
+                url_for('register')
+            )
+        new_user = User(
+            username=username,
+            password=generate_password_hash(
+                password,
+                method='scrypt'
+            ),
+            role='user'
+        )
+        try:
+            db.session.add(new_user)
+            db.session.commit()
+            flash(
+                'Đăng ký thành công! Hãy đăng nhập.',
+                'success'
+            )
+            return redirect(
+                url_for('login')
+            )
+        except Exception as e:
+            db.session.rollback()
+            flash(
+                f"Có lỗi xảy ra trong quá trình đăng ký: {e}",
+                'danger'
+            )
+    return render_template(
+        'register.html'
+    )
 
-# 5. ĐĂNG XUẤT
+# ============================================================
+# 13. ĐĂNG XUẤT
+# ============================================================
 @app.route('/logout')
 @login_required
 def logout():
     logout_user()
-    flash('Đã đăng xuất tài khoản.', 'info')
-    return redirect(url_for('login'))
+    flash(
+        'Đã đăng xuất thành công.',
+        'info'
+    )
+    return redirect(
+        url_for('login')
+    )
 
-# LỆNH CHẠY SERVER LUÔN ĐẶT Ở CUỐI FILE
-if __name__ == '__main__':
-    app.run(debug=True)
+# ============================================================
+# Bổ sung tự động update tổng tiền 
+# ============================================================
+@app.template_filter('format_money')
+def format_money(value):
+    if value is None:
+        return "0 VNĐ"
+    try:
+        # Làm sạch chuỗi nếu dữ liệu chứa dấu phẩy hoặc khoảng trắng
+        if isinstance(value, str):
+            value = value.replace(',', '').strip()
+
+        val = float(value)
+    except (ValueError, TypeError):
+        return "0 VNĐ"
+
+    # LƯU Ý: Nếu dữ liệu trong Database của bạn đang lưu theo đơn vị TRIỆU 
+    # (Ví dụ: 1650 = 1,650 triệu = 1.65 tỷ), hãy BỎ DẤU # ở dòng bên dưới:
+    # val = val * 1_000_000
+    abs_val = abs(val)
+    if abs_val >= 1e15:
+        amount = val / 1e15
+        unit = "triệu tỷ VNĐ"
+    elif abs_val >= 1e12:
+        amount = val / 1e12
+        unit = "nghìn tỷ VNĐ"
+    elif abs_val >= 1e9:
+        amount = val / 1e9
+        unit = "tỷ VNĐ"
+    elif abs_val >= 1e6:
+        amount = val / 1e6
+        unit = "triệu VNĐ"
+    elif abs_val >= 1e3:
+        amount = val / 1e3
+        unit = "nghìn VNĐ"
+    else:
+        return f"{int(val):,} VNĐ".replace(',', '.')
+
+    # Làm tròn 2 chữ số thập phân và định dạng dấu phẩy tiếng Việt
+    formatted_amount = f"{amount:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+    
+    if formatted_amount.endswith(',00'):
+        formatted_amount = formatted_amount[:-3]
+    return f"{formatted_amount} {unit}"
+
+# ============================================================
+# 14. CHẠY ỨNG DỤNG
+# ============================================================
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)

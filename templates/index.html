@@ -1,10 +1,15 @@
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VAY TIỀN ONLINE - Đánh Giá Tín Dụng</title>
+    <title>Hệ Thống Đánh Giá Tín Dụng Thông Minh</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome Icon -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
     <style>
         * {
             box-sizing: border-box;
@@ -13,219 +18,456 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         body {
-            background-color: #f8f9fa;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
+            background-color: #f8fafc;
+            color: #334155;
         }
-        .main-wrapper {
+        .navbar-custom {
+            background: #ffffff;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .logo { 
+            font-size: 18px; 
+            font-weight: 800; 
+            color: #1e40af; 
+            text-decoration: none; 
+            letter-spacing: 0.5px;
+        }
+        .user-profile { font-size: 14px; font-weight: 700; color: #0f172a; }
+        .logout-link { color: #dc2626; font-size: 13px; margin-left: 10px; text-decoration: none; }
+        .logout-link:hover { text-decoration: underline; }
+
+        /* KHUNG CHÍNH - FORM THẨM ĐỊNH */
+        .main-container {
+            max-width: 950px;
+            margin: 40px auto;
             background: white;
-            width: 100%;
-            max-width: 1000px;
             border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-            display: flex;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
             overflow: hidden;
-            flex-wrap: wrap;
+            border: 1px solid #e2e8f0;
         }
-        /* Cột bên trái: Hình ảnh minh họa */
-        .left-banner {
-            flex: 1;
-            min-width: 320px;
-            background-color: #eefbf4;
+        .banner-header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .banner-header h1 {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .banner-header p {
+            font-size: 14px;
+            color: #dbeafe;
+            margin: 0;
+        }
+        .form-content {
+            padding: 35px;
+        }
+        .result { 
+            margin-top: 25px; 
+            padding: 18px; 
+            border-radius: 10px; 
+            font-weight: 700; 
+            text-align: center; 
+        }
+        .result.approved { 
+            background-color: #d1fae5; 
+            color: #065f46; 
+            border: 1px solid #a7f3d0; 
+        }
+        .result.rejected { 
+            background-color: #fee2e2; 
+            color: #991b1b; 
+            border: 1px solid #fca5a5; 
+        }
+
+        /* ---------------------------------------------------- */
+        /* STYLES CHATBOT BONG BÓNG VỚI HÌNH ROBOT ĐỘNG NHÚN NHẢY */
+        /* ---------------------------------------------------- */
+        /* Hiệu ứng nhún nhảy lên xuống tự nhiên như robot đang bay */
+        @keyframes robotFloat {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* Nút bong bóng chứa ảnh Robot */
+        .chat-bubble-btn {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            width: 68px;
+            height: 68px;
+            background-color: #2563eb;
+            color: white;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 30px;
+            box-shadow: 0 8px 22px rgba(37, 99, 235, 0.4);
+            cursor: pointer;
+            z-index: 1000;
+            transition: transform 0.3s ease, background-color 0.3s ease;
+            animation: robotFloat 3s ease-in-out infinite; /* Tạo hiệu ứng bay nhẹ */
         }
-        .left-banner img {
-            width: 100%;
-            max-width: 400px;
-            height: auto;
+        .chat-bubble-btn:hover {
+            transform: scale(1.1);
+            background-color: #1d4ed8;
+        }
+
+        /* Kích thước ảnh robot bên trong bong bóng */
+        .chat-bubble-btn img {
+            width: 52px;
+            height: 52px;
             object-fit: contain;
         }
-        /* Cột bên phải: Tiêu đề & Form */
-        .right-content {
-            flex: 1;
-            min-width: 320px;
-            padding: 40px;
+
+        .chat-bubble-btn i {
+            font-size: 28px;
+        }
+
+        /* Cửa sổ Chatbot Floating Widget */
+        .chat-box-widget {
+            position: fixed;
+            bottom: 105px;
+            right: 25px;
+            width: 380px;
+            height: 520px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+            border: 1px solid #e2e8f0;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            z-index: 1000;
+            overflow: hidden;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px) scale(0.95);
+            transition: all 0.3s ease-in-out;
         }
-        .hero-title {
-            font-size: 38px;
-            font-weight: 900;
-            color: #111827;
-            line-height: 1.1;
-            letter-spacing: 1px;
-            margin-bottom: 25px;
-            text-transform: uppercase;
+
+        .chat-box-widget.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
         }
-        .hero-title span {
-            color: #059669;
-            display: block;
-        }
-        /* Form nhập liệu */
-        .form-group {
-            margin-bottom: 16px;
-        }
-        label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: 600;
-            font-size: 14px;
-            color: #374151;
-        }
-        input, select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            font-size: 15px;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        input:focus, select:focus {
-            border-color: #059669;
-        }
-        button {
-            width: 100%;
-            padding: 14px;
-            background-color: #059669;
+
+        .chat-header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
             color: white;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .chat-header-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: white;
+            padding: 2px;
+            object-fit: contain;
+        }
+        .chat-header .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #10b981;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .chat-header-close {
+            background: none;
             border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
+            color: #94a3b8;
+            font-size: 18px;
             cursor: pointer;
-            margin-top: 10px;
-            transition: background-color 0.2s;
+            transition: color 0.2s;
         }
-        button:hover {
-            background-color: #047857;
+        .chat-header-close:hover {
+            color: white;
         }
-        /* Thông báo kết quả */
-        .result {
-            margin-top: 20px;
-            padding: 14px;
-            text-align: center;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 15px;
+
+        .chat-body {
+            flex: 1;
+            padding: 18px;
+            overflow-y: auto;
+            background-color: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
-        .approved {
-            background-color: #d1fae5;
-            color: #065f46;
-            border: 1px solid #a7f3d0;
+        .message {
+            max-width: 82%;
+            padding: 10px 14px;
+            border-radius: 14px;
+            font-size: 13.5px;
+            line-height: 1.5;
         }
-        .rejected {
-            background-color: #fee2e2;
-            color: #991b1b;
-            border: 1px solid #fca5a5;
+        .message.bot {
+            background: #ffffff;
+            color: #1e293b;
+            align-self: flex-start;
+            border: 1px solid #e2e8f0;
+            border-bottom-left-radius: 2px;
+        }
+        .message.user {
+            background: #2563eb;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 2px;
+        }
+        .chat-footer {
+            padding: 12px 15px;
+            background: white;
+            border-top: 1px solid #e2e8f0;
         }
     </style>
 </head>
 <body>
 
-<div class="main-wrapper">
-    <!-- Cột trái: Ảnh minh họa giống mẫu -->
-    <div class="left-banner">
-        <img src="{{ url_for('static', filename='banner.jpg') }}" alt="Vay Tiền Online Banner">
+    <!-- NAVBAR HEADER -->
+    <div class="navbar-custom">
+        <a class="logo" href="/user">
+            <i class="fa-solid fa-shield-halved me-2"></i>HỆ THỐNG ĐÁNH GIÁ TÍN DỤNG THÔNG MINH
+        </a>
+        <div class="user-profile">
+            <i class="fa-solid fa-circle-user me-1 text-primary"></i> Xin chào, <strong>{{ user.username }}</strong>!
+            <a href="/logout" class="logout-link"><i class="fa-solid fa-right-from-bracket"></i> Đăng xuất</a>
+        </div>
     </div>
 
-    <!-- Cột phải: Tiêu đề lớn và Form dự đoán -->
-   <!-- Cột phải: Tiêu đề lớn và Form dự đoán -->
-<div class="right-content">
-    <!-- Thanh chào người dùng và Đăng xuất (Nằm ngoài h1) -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: #e0f2fe; padding: 10px 15px; border-radius: 8px;">
-        <span style="color: #0369a1; font-weight: bold;">Xin chào, {{ user.username }}!</span>
-        <a href="/logout" style="color: #dc2626; text-decoration: none; font-weight: bold; font-size: 14px;">[Đăng xuất]</a>
-    </div>
+    <!-- MAIN CONTAINER - FORM THẨM ĐỊNH -->
+    <div class="main-container">
+        <div class="banner-header">
+            <h1>Hệ Thống Thẩm Định Hồ Sơ Tín Dụng</h1>
+            <p>Đánh giá & Phân tích khả năng duyệt vay dựa trên mô hình trí tuệ nhân tạo</p>
+        </div>
 
-    <!-- Tiêu đề lớn -->
-    <h1 class="hero-title">
-        VAY TIỀN<br>
-        <span>ONLINE</span>
-    </h1>
+        <div class="form-content">
+            <form id="creditForm" action="/user" method="POST">
+                
+                <input type="hidden" id="income" name="income">
+                <input type="hidden" id="loan_amount" name="loan_amount">
 
-        <form action="/predict" method="post">
-            <div class="form-group">
-                <label>Thu nhập hàng tháng (Triệu VNĐ):</label>
-                <input type="number" name="income" required placeholder="Ví dụ: 15">
-            </div>
-
-            <div class="form-group">
-                <label>Lịch sử tín dụng:</label>
-                <select name="credit_history">
-                    <option value="1">Tốt (Không nợ xấu)</option>
-                    <option value="0">Xấu (Có nợ xấu)</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Số tiền muốn vay (Triệu VNĐ):</label>
-                <input type="number" name="loan_amount" required placeholder="Ví dụ: 100">
-            </div>
-
-            <div class="form-group">
-                <label>Tuổi người vay:</label>
-                <input type="number" name="age" required placeholder="Ví dụ: 25">
-            </div>
-
-            <button type="submit">ĐÁNH GIÁ HỒ SƠ</button>
-        </form>
-
-        {% if result %}
-            <div class="result {{ 'approved' if status == 1 else 'rejected' }}">
-                <div style="font-size: 16px; margin-bottom: 5px;">{{ result }}</div>
-
-                <!-- Nếu bị từ chối, hiển thị chi tiết các lý do -->
-                {% if status == 0 and reasons %}
-                    <div style="text-align: left; margin-top: 10px; font-weight: normal; font-size: 13px; border-top: 1px dashed #fca5a5; padding-top: 10px;">
-                        <strong style="color: #991b1b; display: block; margin-bottom: 5px;">Lý do chưa đạt yêu cầu:</strong>
-                        <ul style="padding-left: 20px; color: #7f1d1d; margin-bottom: 10px;">
-                            {% for reason in reasons %}
-                                <li>{{ reason }}</li>
-                            {% endfor %}
-                        </ul>
+                <div class="row g-3">
+                    <!-- Thu nhập hàng tháng -->
+                    <div class="col-md-6 mb-3">
+                        <label for="income_display" class="form-label fw-bold text-dark">
+                            <i class="fa-solid fa-money-bill-wave text-primary me-1"></i> Thu nhập hàng tháng (VNĐ):
+                        </label>
+                        <input 
+                            type="text" 
+                            id="income_display" 
+                            class="form-control form-control-lg fs-6 py-2 currency-input" 
+                            placeholder="Ví dụ: 15.000.000" 
+                            required
+                        >
                     </div>
-                {% endif %}
-            </div>
-        {% endif %}
 
-        <!-- Nút xem Điều khoản & Điều kiện vay -->
-        <div style="margin-top: 20px; text-align: center;">
-            <button type="button" onclick="toggleTerms()" style="background: none; border: none; color: #2563eb; font-size: 13px; cursor: pointer; text-decoration: underline; padding: 0;">
-                📋 Xem Điều Kiện & Quy Định Duyệt Khoản Vay
-            </button>
+                    <!-- Lịch sử tín dụng -->
+                    <div class="col-md-6 mb-3">
+                        <label for="credit_history" class="form-label fw-bold text-dark">
+                            <i class="fa-solid fa-clock-rotate-left text-primary me-1"></i> Lịch sử tín dụng (CIC):
+                        </label>
+                        <select 
+                            id="credit_history" 
+                            name="credit_history" 
+                            class="form-select form-select-lg fs-6 py-2" 
+                            required
+                        >
+                            <option value="1" selected>Tốt (Không có nợ xấu)</option>
+                            <option value="0">Kém (Từng có nợ xấu/Nợ quá hạn)</option>
+                        </select>
+                    </div>
+
+                    <!-- Số tiền đề xuất vay -->
+                    <div class="col-md-6 mb-3">
+                        <label for="loan_amount_display" class="form-label fw-bold text-dark">
+                            <i class="fa-solid fa-hand-holding-dollar text-primary me-1"></i> Số tiền đề xuất vay (VNĐ):
+                        </label>
+                        <input 
+                            type="text" 
+                            id="loan_amount_display" 
+                            class="form-control form-control-lg fs-6 py-2 currency-input" 
+                            placeholder="Ví dụ: 100.000.000" 
+                            required
+                        >
+                    </div>
+
+                    <!-- Tuổi người vay -->
+                    <div class="col-md-6 mb-4">
+                        <label for="age" class="form-label fw-bold text-dark">
+                            <i class="fa-solid fa-cake-candles text-primary me-1"></i> Tuổi người vay:
+                        </label>
+                        <input 
+                            type="number" 
+                            id="age" 
+                            name="age" 
+                            class="form-control form-control-lg fs-6 py-2" 
+                            placeholder="Ví dụ: 25" 
+                            required
+                        >
+                    </div>
+                </div>
+
+                <!-- Nút gửi form -->
+                <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold py-3 text-uppercase shadow-sm">
+                    <i class="fa-solid fa-chart-line me-2"></i> Đánh Giá Hồ Sơ Tín Dụng
+                </button>
+            </form>
+
+            <!-- HIỂN THỊ KẾT QUẢ VÀ LÝ DO TỪ CHỐI -->
+            {% if result %}
+                <div class="result {{ 'approved' if status == 1 else 'rejected' }}">
+                    <div class="fs-5"><i class="{{ 'fa-solid fa-circle-check' if status == 1 else 'fa-solid fa-circle-xmark' }} me-2"></i>{{ result }}</div>
+                    {% if status == 0 and reasons %}
+                        <div style="text-align: left; margin-top: 12px; font-weight: normal; font-size: 14px; border-top: 1px dashed #fca5a5; padding-top: 10px;">
+                            <strong style="color: #991b1b; display: block; margin-bottom: 5px;">Lý do chưa đạt yêu cầu:</strong>
+                            <ul style="padding-left: 20px; color: #7f1d1d; margin-bottom: 0;">
+                                {% for reason in reasons %}
+                                    <li>{{ reason }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
         </div>
-
-        <!-- Khung ẩn Điều khoản dịch vụ -->
-        <div id="termsModal" style="display: none; margin-top: 15px; padding: 15px; background: #f1f5f9; border-radius: 8px; font-size: 13px; color: #334155; text-align: left; border: 1px solid #cbd5e1;">
-            <h4 style="margin-bottom: 8px; color: #0f172a; text-align: center;">TIÊU CHUẨN DUYỆT KHOẢN VAY</h4>
-            <ul style="padding-left: 20px; line-height: 1.6;">
-                <li><strong>Độ tuổi quy định:</strong> Khách hàng từ 18 đến 60 tuổi.</li>
-                <li><strong>Thu nhập tối thiểu:</strong> Từ 10.000.000 VNĐ/tháng trở lên.</li>
-                <li><strong>Lịch sử tín dụng:</strong> Không có nợ xấu (Lịch sử tín dụng Tốt).</li>
-                <li><strong>Hạn mức vay tối đa:</strong> Không vượt quá 20 lần tổng thu nhập hàng tháng.</li>
-            </ul>
-        </div>
-
-        <script>
-            function toggleTerms() {
-                var modal = document.getElementById("termsModal");
-                if (modal.style.display === "none") {
-                    modal.style.display = "block";
-                } else {
-                    modal.style.display = "none";
-                }
-            }
-        </script>
     </div>
-</div>
+
+    <!-- ---------------------------------------------------- -->
+    <!-- BONG BÓNG VÀ CỬA SỔ CHATBOT (FLOATING WIDGET)        -->
+    <!-- ---------------------------------------------------- -->
+    <!-- Nút Bấm Bong Bóng Robot -->
+    <div class="chat-bubble-btn" onclick="toggleChatWindow()">
+        <span id="chatIconContainer">
+            <img src="{{ url_for('static', filename='images/robot.png') }}" alt="Robot Chatbot">
+        </span>
+    </div>
+
+    <!-- Cửa Sổ Chatbot -->
+    <div class="chat-box-widget" id="chatBoxWidget">
+        <div class="chat-header">
+            <div class="d-flex align-items-center gap-2">
+                <img src="{{ url_for('static', filename='images/robot.png') }}" class="chat-header-avatar" alt="Robot AI">
+                <div>
+                    <div class="fw-bold" style="font-size: 14px;">Trợ Lý Tín Dụng AI</div>
+                    <div style="font-size: 11px; color: #94a3b8;"><span class="status-dot me-1"></span>Trực tuyến 24/7</div>
+                </div>
+            </div>
+            <button class="chat-header-close" onclick="toggleChatWindow()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div class="chat-body" id="chatBody">
+            <div class="message bot">
+                Xin chào <strong>{{ user.username }}</strong>! 👋<br>
+                Tôi là trợ lý ảo hỗ trợ thẩm định tín dụng. Bạn cần tư vấn về hạn mức hay thủ tục vay?
+            </div>
+        </div>
+
+        <div class="chat-footer">
+            <form id="chatForm" onsubmit="sendMessage(event)">
+                <div class="input-group">
+                    <input 
+                        type="text" 
+                        id="chatInput" 
+                        class="form-control form-control-sm py-2" 
+                        placeholder="Nhập tin nhắn..." 
+                        autocomplete="off"
+                        required
+                    >
+                    <button class="btn btn-primary btn-sm px-3" type="submit">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT -->
+    <script>
+        // Đường dẫn ảnh robot từ Flask Jinja
+        const robotImgUrl = "{{ url_for('static', filename='images/robot.png') }}";
+
+        // 1. Bật/Tắt Cửa Sổ Chatbot & Chuyển Đổi Nút Đóng / Mở
+        function toggleChatWindow() {
+            const chatWidget = document.getElementById('chatBoxWidget');
+            const iconContainer = document.getElementById('chatIconContainer');
+
+            chatWidget.classList.toggle('active');
+
+            if (chatWidget.classList.contains('active')) {
+                iconContainer.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+            } else {
+                iconContainer.innerHTML = `<img src="${robotImgUrl}" alt="Robot Chatbot">`;
+            }
+        }
+
+        // 2. Định dạng tiền tự động khi gõ
+        document.querySelectorAll('.currency-input').forEach(function(input) {
+            input.addEventListener('input', function(e) {
+                let value = this.value.replace(/\D/g, '');
+                if (value) {
+                    this.value = parseInt(value, 10).toLocaleString('vi-VN');
+                } else {
+                    this.value = '';
+                }
+            });
+        });
+
+        // 3. Quy đổi tiền triệu VNĐ trước khi Submit Form
+        document.getElementById('creditForm').addEventListener('submit', function(e) {
+            let rawIncome = document.getElementById('income_display').value.replace(/\./g, '');
+            let rawLoan = document.getElementById('loan_amount_display').value.replace(/\./g, '');
+
+            document.getElementById('income').value = parseFloat(rawIncome) / 1000000;
+            document.getElementById('loan_amount').value = parseFloat(rawLoan) / 1000000;
+        });
+
+        // 4. Logic gửi và trả lời tin nhắn trong Chatbot
+        function sendMessage(e) {
+            e.preventDefault();
+            const input = document.getElementById('chatInput');
+            const messageText = input.value.trim();
+            if (!messageText) return;
+
+            const chatBody = document.getElementById('chatBody');
+
+            const userMsg = document.createElement('div');
+            userMsg.className = 'message user';
+            userMsg.textContent = messageText;
+            chatBody.appendChild(userMsg);
+
+            input.value = '';
+            chatBody.scrollTop = chatBody.scrollHeight;
+
+            setTimeout(() => {
+                const botMsg = document.createElement('div');
+                botMsg.className = 'message bot';
+                
+                const textLower = messageText.toLowerCase();
+                if (textLower.includes('lãi suất')) {
+                    botMsg.innerHTML = 'Lãi suất ưu đãi hiện tại dao động từ <strong>0.8% - 1.2%/tháng</strong> tùy thuộc vào điểm tín dụng của bạn.';
+                } else if (textLower.includes('điều kiện') || textLower.includes('hồ sơ')) {
+                    botMsg.innerHTML = 'Điều kiện cơ bản: Thu nhập từ 5 triệu/tháng, tuổi từ 18-60 và không có nợ xấu trên hệ thống CIC.';
+                } else {
+                    botMsg.innerHTML = 'Cảm ơn bạn đã nhắn tin. Hệ thống đã ghi nhận yêu cầu và sẽ tư vấn thêm cho bạn!';
+                }
+                chatBody.appendChild(botMsg);
+                chatBody.scrollTop = chatBody.scrollHeight;
+            }, 500);
+        }
+    </script>
 
 </body>
 </html>

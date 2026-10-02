@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Dự Đoán Tín Dụng Thông Minh - Admin</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f1f5f9;
+            color: #334155;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            background: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .logo {
+            font-size: 18px;
+            font-weight: 800;
+            color: #2563eb;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #64748b;
+        }
+
+        .nav-links a.active {
+            color: #2563eb;
+            border-bottom: 2px solid #2563eb;
+            padding-bottom: 5px;
+        }
+
+        .user-profile {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .logout-link {
+            color: #dc2626;
+            font-size: 12px;
+            margin-left: 10px;
+            text-decoration: none;
+        }
+
+        /* CONTAINER */
+        .container {
+            padding: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        /* CARDS */
+        .grid-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+
+        .card-header {
+            font-size: 13px;
+            font-weight: 700;
+            color: #64748b;
+            margin-bottom: 8px;
+        }
+
+        .card-value {
+            font-size: 26px;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .card-value.green {
+            color: #059669;
+        }
+
+        /* TABLE */
+        .table-wrapper {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+        }
+
+        .table-header-tools {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .search-box {
+            padding: 8px 15px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            width: 250px;
+            outline: none;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th {
+            background-color: #f8fafc;
+            padding: 12px;
+            color: #475569;
+            font-weight: 700;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        td {
+            padding: 14px 12px;
+            border-bottom: 1px solid #f1f5f9;
+            color: #1e293b;
+        }
+
+        /* BADGES */
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            display: inline-block;
+        }
+
+        .badge-approved { background: #d1fae5; color: #065f46; }
+        .badge-rejected { background: #fee2e2; color: #991b1b; }
+        .badge-pending { background: #e0f2fe; color: #0369a1; }
+        
+        .badge-role-admin { background: #fee2e2; color: #991b1b; }
+        .badge-role-user { background: #e0f2fe; color: #0369a1; }
+
+        /* BUTTONS */
+        .btn-action {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            color: white;
+            margin-right: 4px;
+        }
+
+        .btn-approve { background-color: #059669; }
+        .btn-reject { background-color: #dc2626; }
+        .btn-info { background-color: #2563eb; }
+        .btn-delete { background-color: #dc2626; transition: background 0.2s; }
+        .btn-delete:hover { background-color: #b91c1c; }
+
+        @media (max-width: 900px) {
+            .navbar { flex-direction: column; gap: 15px; }
+            .nav-links { flex-wrap: wrap; justify-content: center; }
+            .table-wrapper { overflow-x: auto; }
+            table { min-width: 900px; }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- NAVBAR -->
+    <div class="navbar">
+        <a class="logo" href="/admin">HỆ THỐNG DỰ ĐOÁN TÍN DỤNG THÔNG MINH</a>
+
+        <div class="nav-links">
+            <a href="/admin" class="active">Trang Chủ</a>
+            <a href="#">Công Cụ & Lãi Suất</a>
+            <a href="#">Hồ Sơ Của Tôi</a>
+            <a href="#">Góc Tư Vấn</a>
+        </div>
+
+        <div class="user-profile">
+            👤 {{ user.username.upper() }} (Quản trị viên)
+            <a href="/logout" class="logout-link">[Đăng xuất]</a>
+        </div>
+    </div>
+
+    <!-- MAIN CONTAINER -->
+    <div class="container">
+
+        <div class="section-title">TỔNG QUAN HOẠT ĐỘNG</div>
+
+        <!-- THỐNG KÊ THÔNG SỐ -->
+        <div class="grid-cards">
+            <div class="card">
+                <div class="card-header">Tổng Số Hồ Sơ</div>
+                <div class="card-value">{{ total_activities|default(0) }}</div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">Số Lượng Người Dùng</div>
+                <div class="card-value">{{ total_users|default(0) }}</div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">Tổng Khoản Vay</div>
+                <div class="text-green-600 font-bold text-2xl">
+                   {{ (total_loan or 0) | format_money }}
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">Tỷ Lệ Phê Duyệt</div>
+                <div class="card-value green">{{ approval_rate|default(0) }}%</div>
+            </div>
+        </div>
+
+        <!-- BẢNG 1: QUẢN LÝ HỒ SƠ & PHÊ DUYỆT -->
+        <div class="table-wrapper">
+            <div class="table-header-tools">
+                <div class="section-title" style="margin: 0;">QUẢN LÝ HỒ SƠ & PHÊ DUYỆT</div>
+                <input type="text" class="search-box" placeholder="Tìm kiếm hồ sơ...">
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Mã Hồ Sơ</th>
+                        <th>Tên Người Dùng</th>
+                        <th>Điểm Tín Dụng</th>
+                        <th>Số Tiền Yêu Cầu</th>
+                        <th>Trạng Thái Dự Đoán AI</th>
+                        <th>Hành Động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for application in apps %}
+                    <tr>
+                        <td><strong>{{ application.app_id }}</strong></td>
+                        <td>{{ application.username }}</td>
+                        <td>{{ application.score }}</td>
+                        <td>{{ "{:,.0f}".format(application.amount|default(0)|float) }} triệu VNĐ</td>
+                        <td>
+                            <span class="badge badge-{{ application.badge }}">
+                                {{ application.status }}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn-action btn-approve" type="button">Phê Duyệt</button>
+                            <button class="btn-action btn-reject" type="button">Từ Chối</button>
+                            <button class="btn-action btn-info" type="button">Yêu Cầu Thêm TT</button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: #94a3b8; padding: 20px;">
+                            Chưa có hồ sơ vay nào trong hệ thống.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div> <!-- Đóng Bảng 1 -->
+
+        <!-- BẢNG 2: QUẢN LÝ TÀI KHOẢN NGƯỜI DÙNG -->
+        <div class="table-wrapper">
+            <div class="section-title" style="margin-bottom: 20px;">QUẢN LÝ TÀI KHOẢN NGƯỜI DÙNG</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Tên Đăng Nhập</th>
+                        <th>Vai Trò (Role)</th>
+                        <th>Thao Tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users_list %}
+                    <tr>
+                        <td>{{ u.id }}</td>
+                        <td><strong>{{ u.username }}</strong></td>
+                        <td>
+                            <span class="badge {{ 'badge-role-admin' if u.role == 'admin' else 'badge-role-user' }}">
+                                {{ u.role }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if u.username != 'admin' %}
+                                <form action="/admin/users/delete/{{ u.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Bạn có chắc muốn xóa tài khoản {{ u.username }} này?');">
+                                    <button type="submit" class="btn-action btn-delete">Xóa</button>
+                                </form>
+                            {% else %}
+                                <span style="color: #94a3b8; font-size: 13px;">Mặc định</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: #94a3b8; padding: 20px;">
+                            Chưa có tài khoản nào khác.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div> <!-- Đóng Bảng 2 -->
+
+    </div> <!-- Đóng Container -->
+
+</body>
+</html>

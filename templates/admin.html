@@ -193,6 +193,23 @@
         .btn-delete { background-color: #dc2626; transition: background 0.2s; }
         .btn-delete:hover { background-color: #b91c1c; }
 
+        /* MODAL STYLES */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            align-items: center; justify-content: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            width: 400px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
         @media (max-width: 900px) {
             .navbar { flex-direction: column; gap: 15px; }
             .nav-links { flex-wrap: wrap; justify-content: center; }
@@ -240,8 +257,8 @@
 
             <div class="card">
                 <div class="card-header">Tổng Khoản Vay</div>
-                <div class="text-green-600 font-bold text-2xl">
-                   {{ (total_loan or 0) | format_money }}
+                <div class="card-value green">
+                   {{ (total_loans or 0) | format_money }}
                 </div>
             </div>
 
@@ -281,10 +298,29 @@
                                 {{ application.status }}
                             </span>
                         </td>
-                        <td>
-                            <button class="btn-action btn-approve" type="button">Phê Duyệt</button>
-                            <button class="btn-action btn-reject" type="button">Từ Chối</button>
-                            <button class="btn-action btn-info" type="button">Yêu Cầu Thêm TT</button>
+                        <td style="display: flex; gap: 4px;">
+                            <!-- Nút Phê Duyệt -->
+                            <form action="{{ url_for('approve_application', id=application.id) }}" method="POST" style="display: inline;">
+                                <button type="submit" 
+                                        onclick="return confirm('Bạn có chắc muốn phê duyệt hồ sơ này?')" 
+                                        class="btn-action btn-approve">
+                                    Phê Duyệt
+                                </button>
+                            </form>
+
+                            <!-- Nút Yêu Cầu Bổ Sung -->
+                            <button type="button" 
+                                    onclick="openRequestInfoModal('{{ application.id }}')" 
+                                    class="btn-action btn-info">
+                                Bổ Sung
+                            </button>
+
+                            <!-- Nút Từ Chối -->
+                            <button type="button" 
+                                    onclick="openRejectModal('{{ application.id }}')" 
+                                    class="btn-action btn-reject">
+                                Từ Chối
+                            </button>
                         </td>
                     </tr>
                     {% else %}
@@ -342,6 +378,33 @@
         </div> <!-- Đóng Bảng 2 -->
 
     </div> <!-- Đóng Container -->
+
+    <!-- Modal Nhập Lý Do Từ Chối -->
+    <div id="rejectModal" class="modal">
+        <div class="modal-content">
+            <h3 style="color: #dc2626; margin-bottom: 10px;">Từ Chối Hồ Sơ</h3>
+            <form id="rejectForm" method="POST">
+                <label style="display: block; font-size: 14px; margin-bottom: 5px;">Lý do gửi khách hàng:</label>
+                <textarea name="reject_reason" rows="3" required style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;" placeholder="Nhập lý do từ chối..."></textarea>
+                <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 15px;">
+                    <button type="button" onclick="closeRejectModal()" class="btn-action" style="background: #94a3b8;">Hủy</button>
+                    <button type="submit" class="btn-action btn-reject">Xác Nhận Từ Chối</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+    function openRejectModal(appId) {
+        const form = document.getElementById('rejectForm');
+        form.action = '/reject_application/' + appId;
+        document.getElementById('rejectModal').style.display = 'flex';
+    }
+
+    function closeRejectModal() {
+        document.getElementById('rejectModal').style.display = 'none';
+    }
+    </script>
 
 </body>
 </html>

@@ -326,24 +326,53 @@
                 </button>
             </form>
 
-            <!-- HIỂN THỊ KẾT QUẢ VÀ LÝ DO TỪ CHỐI -->
-            {% if result %}
-                <div class="result {{ 'approved' if status == 1 else 'rejected' }}">
-                    <div class="fs-5"><i class="{{ 'fa-solid fa-circle-check' if status == 1 else 'fa-solid fa-circle-xmark' }} me-2"></i>{{ result }}</div>
-                    {% if status == 0 and reasons %}
-                        <div style="text-align: left; margin-top: 12px; font-weight: normal; font-size: 14px; border-top: 1px dashed #fca5a5; padding-top: 10px;">
-                            <strong style="color: #991b1b; display: block; margin-bottom: 5px;">Lý do chưa đạt yêu cầu:</strong>
-                            <ul style="padding-left: 20px; color: #7f1d1d; margin-bottom: 0;">
-                                {% for reason in reasons %}
-                                    <li>{{ reason }}</li>
-                                {% endfor %}
-                            </ul>
+           <!-- HIỂN THỊ KẾT QUẢ VÀ LÝ DO TỪ CHỐI -->
+                {% if application %}
+                    {% if application.status == 'Đã Phê Duyệt' %}
+                        <div class="result approved" style="background-color: #d1fae5; border: 1px solid #10b981; padding: 15px; border-radius: 8px; color: #065f46; text-align: center;">
+                            <div class="fs-5 font-bold">
+                                <i class="fa-solid fa-circle-check" style="font-size: 24px; margin-right: 8px;"></i>
+                                🎉 Hồ sơ của bạn đã được PHÊ DUYỆT!
+                            </div>
+                        </div>
+
+                    {% elif application.status == 'Từ Chối' %}
+                        <div class="result rejected" style="background-color: #fef2f2; border: 1px solid #f87171; padding: 15px; border-radius: 8px; color: #991b1b;">
+                            <div class="fs-5 font-bold" style="text-align: center;">
+                                <i class="fa-solid fa-circle-xmark" style="font-size: 24px; margin-right: 8px;"></i>
+                                ❌ Hồ sơ của bạn bị TỪ CHỐI
+                            </div>
+
+                            <div style="text-align: left; margin-top: 12px; font-weight: normal; font-size: 14px;">
+                                <!-- Phản hồi từ Admin/Ngân hàng -->
+                                {% if application.reject_reason %}
+                                    <strong style="color: #991b1b; display: block; margin-bottom: 5px;">Phản hồi từ ngân hàng:</strong>
+                                    <p style="color: #7f1d1d; margin-bottom: 10px; background: #ffffff; padding: 10px; border-radius: 4px; border: 1px solid #fca5a5;">
+                                        {{ application.reject_reason }}
+                                    </p>
+                                {% endif %}
+
+                                <!-- Lý do phân tích từ AI/Hệ thống (nếu có) -->
+                                {% if reasons %}
+                                    <strong style="color: #991b1b; display: block; margin-bottom: 5px;">Lý do chi tiết từ hệ thống:</strong>
+                                    <ul style="padding-left: 20px; color: #7f1d1d; margin-bottom: 0;">
+                                        {% for reason in reasons %}
+                                            <li>{{ reason }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                    {% else %}
+                        <div class="result pending" style="background-color: #fef3c7; border: 1px solid #f59e0b; padding: 15px; border-radius: 8px; color: #92400e; text-align: center;">
+                            <div class="fs-5 font-bold">
+                                <i class="fa-solid fa-clock" style="font-size: 24px; margin-right: 8px;"></i>
+                                ⏳ Hồ sơ của bạn đang được xét duyệt...
+                            </div>
                         </div>
                     {% endif %}
-                </div>
-            {% endif %}
-        </div>
-    </div>
+                {% endif %}
 
     <!-- ---------------------------------------------------- -->
     <!-- BONG BÓNG VÀ CỬA SỔ CHATBOT (FLOATING WIDGET)        -->

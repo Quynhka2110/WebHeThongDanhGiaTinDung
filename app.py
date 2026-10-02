@@ -110,6 +110,7 @@ class Application(db.Model):
         db.String(20),
         nullable=False
     )
+    reject_reason = db.Column(db.Text, nullable=True)
 
 # ============================================================
 # 6. LOAD USER ĐĂNG NHẬP
@@ -366,11 +367,8 @@ def user_home():
             reasons.append(
                 f"Độ tuổi ({age} tuổi) ngoài quy định (Từ 18 đến 60 tuổi)."
             )
-
         # ====================================================
         # ĐÁNH GIÁ HỒ SƠ
-        # ====================================================
-
         if len(reasons) == 0:
             status = 1
             result = (
@@ -379,7 +377,6 @@ def user_home():
             )
             ai_status = "Phê Duyệt"
             badge_type = "approved"
-
         else:
             status = 0
             result = (
@@ -388,10 +385,9 @@ def user_home():
             )
             ai_status = "Từ Chối"
             badge_type = "rejected"
-
         # ====================================================
         # TẠO ĐIỂM TÍN DỤNG DEMO
-        # ====================================================
+       
         if status == 1:
             score = random.randint(
                 650,
@@ -404,12 +400,10 @@ def user_home():
             )
         # ====================================================
         # TẠO HỒ SƠ MỚI (ĐÃ FIX LỖI DATABASE LOCKED)
-        # ====================================================
         # 1. Sinh mã ngẫu nhiên và kiểm tra trùng TRƯỚC KHI add vào session
         generated_app_id = f"HS-{random.randint(100000, 999999)}"
         while Application.query.filter_by(app_id=generated_app_id).first():
             generated_app_id = f"HS-{random.randint(100000, 999999)}"
-
         # 2. Khởi tạo đối tượng hồ sơ
         new_app = Application(
             app_id=generated_app_id,
@@ -419,7 +413,6 @@ def user_home():
             status=ai_status,
             badge=badge_type
         )
-
         # 3. Lưu vào Database với try-except an toàn
         try:
             db.session.add(new_app)
@@ -442,20 +435,21 @@ def user_home():
             )
     # ========================================================
     # HIỂN THỊ GIAO DIỆN
-    # ========================================================
+    user_app = Application.query.filter_by(username=current_user.username).order_by(Application.id.desc()).first()
+
     return render_template(
         'index.html',
         result=result,
         status=status,
         reasons=reasons,
-        user=current_user
+        user=current_user,
+        application=user_app
     )
 
 # ============================================================
 # ============================================================
 # 10. ADMIN DASHBOARD & QUẢN LÝ NGƯỜI DÙNG
 # ============================================================
-
 @app.route('/admin')
 @login_required
 def admin_dashboard():
@@ -482,7 +476,6 @@ def admin_dashboard():
         approval_rate = round((approved_count / total_activities) * 100, 1)
     else:
         approval_rate = 0
-
     return render_template(
         'admin.html',
         user=current_user,
@@ -495,7 +488,6 @@ def admin_dashboard():
         approved_count=approved_count,
         rejected_count=rejected_count
     )
-
 
 # API Xóa người dùng (Dành cho Admin)
 @app.route('/admin/users/delete/<int:user_id>', methods=['POST'])
@@ -702,8 +694,48 @@ def format_money(value):
         formatted_amount = formatted_amount[:-3]
     return f"{formatted_amount} {unit}"
 
+# ==============================================================================
+# ROUTE XỬ LÝ PHÊ DUYỆT / TỪ CHỐI HỒ SƠ
+# ==============================================================================
+@app.route('/approve_application/<int:id>', methods=['POST'])
+@login_required
+def approve_application(id):
+    app_item = Application.query.get_or_404(id)
+    app_item.status = 'Đã Phê Duyệt'
+    db.session.commit()
+    flash('Đã phê duyệt hồ sơ thành công!', 'success')
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/reject_application/<int:id>', methods=['POST'])
+@login_required
+def reject_application(id):
+    app_item = Application.query.get_or_404(id)
+    reason = request.form.get('reject_reason', 'Không đủ điều kiện phê duyệt')
+    
+    app_item.status = 'Từ Chối'
+    app_item.reject_reason = reason
+    db.session.commit()
+    flash('Đã từ chối hồ sơ và gửi phản hồi cho khách hàng.', 'warning')
+    return redirect(url_for('admin_dashboard'))
+
+# ==============================================================================
+# ROUTE YÊU CẦU BỔ SUNG THÔNG TIN HỒ SƠ
+@app.route('/request_info_application/<int:id>', methods=['POST'])
+@login_required
+def request_info_application(id):
+    app_item = Application.query.get_or_404(id)
+    info_needed = request.form.get('info_needed', 'Cần bổ sung thêm thông tin giấy tờ/thu nhập.')
+    
+    app_item.status = 'Cần Bổ Sung'
+    app_item.badge = 'pending'
+    app_item.reject_reason = info_needed  # Lưu lý do/yêu cầu bổ sung vào biến này
+    db.session.commit()
+    
+    flash('Đã gửi yêu cầu bổ sung thông tin đến khách hàng!', 'info')
+    return redirect(url_for('admin_dashboard'))
 # ============================================================
 # 14. CHẠY ỨNG DỤNG
 # ============================================================
 if __name__ == "__main__":
+    init_db()
     app.run(host="0.0.0.0", port=5000, debug=True)

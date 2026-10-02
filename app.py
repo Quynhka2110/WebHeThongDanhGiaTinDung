@@ -733,6 +733,13 @@ def request_info_application(id):
     
     flash('Đã gửi yêu cầu bổ sung thông tin đến khách hàng!', 'info')
     return redirect(url_for('admin_dashboard'))
+
+# XỬ LÝ ĐĂNG XUẤT
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash('Đã đăng xuất thành công!', 'info')
+    return redirect(url_for('login'))
 # ============================================================
 # 14. CHẠY ỨNG DỤNG
 # ============================================================

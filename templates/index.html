@@ -326,7 +326,7 @@
                 </button>
             </form>
 
-           <!-- HIỂN THỊ KẾT QUẢ VÀ LÝ DO TỪ CHỐI -->
+          <!-- HIỂN THỊ KẾT QUẢ VÀ LÝ DO TỪ CHỐI -->
                 {% if application %}
                     {% if application.status == 'Đã Phê Duyệt' %}
                         <div class="result approved" style="background-color: #d1fae5; border: 1px solid #10b981; padding: 15px; border-radius: 8px; color: #065f46; text-align: center;">
@@ -373,6 +373,9 @@
                         </div>
                     {% endif %}
                 {% endif %}
+
+                </div> <!-- ĐÓNG BỔ SUNG CHO <div class="form-content"> -->
+            </div> <!-- ĐÓNG BỔ SUNG CHO <div class="main-container"> -->
 
     <!-- ---------------------------------------------------- -->
     <!-- BONG BÓNG VÀ CỬA SỔ CHATBOT (FLOATING WIDGET)        -->

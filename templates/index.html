@@ -383,7 +383,7 @@
     <!-- Nút Bấm Bong Bóng Robot -->
     <div class="chat-bubble-btn" onclick="toggleChatWindow()">
         <span id="chatIconContainer">
-            <img src="{{ url_for('static', filename='images/robot.png') }}" alt="Robot Chatbot">
+            <img src="{{ url_for('static', filename='images/robot1.png') }}" alt="Robot Chatbot">
         </span>
     </div>
 
@@ -391,7 +391,7 @@
     <div class="chat-box-widget" id="chatBoxWidget">
         <div class="chat-header">
             <div class="d-flex align-items-center gap-2">
-                <img src="{{ url_for('static', filename='images/robot.png') }}" class="chat-header-avatar" alt="Robot AI">
+                <img src="{{ url_for('static', filename='images/robot1.png') }}" class="chat-header-avatar" alt="Robot AI">
                 <div>
                     <div class="fw-bold" style="font-size: 14px;">Trợ Lý Tín Dụng AI</div>
                     <div style="font-size: 11px; color: #94a3b8;"><span class="status-dot me-1"></span>Trực tuyến 24/7</div>
@@ -429,7 +429,7 @@
     <!-- JAVASCRIPT -->
     <script>
         // Đường dẫn ảnh robot từ Flask Jinja
-        const robotImgUrl = "{{ url_for('static', filename='images/robot.png') }}";
+        const robotImgUrl = "{{ url_for('static', filename='images/robot1.png') }}";
 
         // 1. Bật/Tắt Cửa Sổ Chatbot & Chuyển Đổi Nút Đóng / Mở
         function toggleChatWindow() {
